@@ -1,3 +1,5 @@
+import 'dotenv/config'
+import { PrismaPg } from '@prisma/adapter-pg'
 import {
   AppliesWhen,
   DocumentMaskType,
@@ -6,7 +8,8 @@ import {
   TreatmentType,
 } from '@prisma/client';
 
-const prisma = new PrismaClient();
+const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL! })
+const prisma = new PrismaClient({ adapter });
 
 async function main() {
   const currency = await prisma.currency.upsert({
