@@ -1,10 +1,11 @@
 import { Module } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
+import { AuthModule } from './auth/auth.module';
 import { AuditModule } from './audit/audit.module';
 import { BranchesModule } from './branches/branches.module';
 import { CatalogsModule } from './catalogs/catalogs.module';
 import { CoverageMasterModule } from './coverage-master/coverage-master.module';
-import { UserAuthGuard } from './common/guards/user-auth.guard';
+import { JwtAuthGuard, RolesGuard } from './common/guards/jwt-auth.guard';
 import { HealthModule } from './health/health.module';
 import { InternalBranchesModule } from './internal-branches/internal-branches.module';
 import { InternalCoveragesModule } from './internal-coverages/internal-coverages.module';
@@ -16,6 +17,7 @@ import { ProductsModule } from './products/products.module';
 @Module({
   imports: [
     PrismaModule,
+    AuthModule,
     AuditModule,
     HealthModule,
     CatalogsModule,
@@ -30,7 +32,11 @@ import { ProductsModule } from './products/products.module';
   providers: [
     {
       provide: APP_GUARD,
-      useClass: UserAuthGuard,
+      useClass: JwtAuthGuard,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: RolesGuard,
     },
   ],
 })

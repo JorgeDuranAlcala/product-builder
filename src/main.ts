@@ -14,7 +14,7 @@ async function bootstrap() {
       process.env.FRONTEND_URL,
     ].filter(Boolean) as string[],
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-User-Id'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
     credentials: true,
   });
 
@@ -31,7 +31,7 @@ async function bootstrap() {
     .setTitle('Products Config API')
     .setDescription('Sistema de configuración de productos para aseguradoras (SISIP)')
     .setVersion('1.0')
-    .addApiKey({ type: 'apiKey', name: 'X-User-Id', in: 'header' }, 'X-User-Id')
+    .addBearerAuth()
     .build();
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api/docs', app, document);

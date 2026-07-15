@@ -59,6 +59,13 @@ enum AuditAction {
   EMIT_PREVIEW
 }
 
+enum UserRole {
+  ADMIN
+  PRODUCT_MANAGER
+  VIEWER
+  AUDITOR
+}
+
 enum DocumentMaskType {
   POLIZA
   RECIBO
@@ -446,4 +453,17 @@ model ConfigAuditLog {
   @@index([productId])
   @@index([createdAt])
   @@map("config_audit_logs")
+}
+
+model User {
+  id           String    @id @default(uuid())
+  email        String    @unique
+  passwordHash String
+  fullName     String
+  role         UserRole  @default(PRODUCT_MANAGER)
+  isActive     Boolean   @default(true)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@map("users")
 }

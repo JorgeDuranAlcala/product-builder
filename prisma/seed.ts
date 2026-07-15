@@ -1,17 +1,31 @@
 import 'dotenv/config'
 import { PrismaPg } from '@prisma/adapter-pg'
+import * as bcrypt from 'bcrypt'
 import {
   AppliesWhen,
   DocumentMaskType,
   PrismaClient,
   RecordStatus,
   TreatmentType,
+  UserRole,
 } from '@prisma/client';
 
 const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL! })
 const prisma = new PrismaClient({ adapter });
 
 async function main() {
+  const adminPassword = await bcrypt.hash('admin123', 10);
+  await prisma.user.upsert({
+    where: { email: 'admin@local.test' },
+    update: {},
+    create: {
+      email: 'admin@local.test',
+      passwordHash: adminPassword,
+      fullName: 'Administrador',
+      role: UserRole.ADMIN,
+    },
+  });
+
   const currency = await prisma.currency.upsert({
     where: { code: 'USD' },
     update: {},
@@ -326,6 +340,7 @@ async function main() {
   });
 
   console.log('Seed completed:', {
+    admin: 'admin@local.test / admin123',
     branches: [branchAutomovil.code, branchPrueba.code, branchComercial.code],
     productId: product.id,
     producerId: producer.id,
