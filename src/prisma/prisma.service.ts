@@ -12,8 +12,17 @@ export class PrismaService
   implements OnModuleInit, OnModuleDestroy
 {
   constructor() {
-    const connectionString = `${process.env.DATABASE_URL}`;
-    const adapter = new PrismaPg({ connectionString });
+    const connectionString = process.env.DATABASE_URL;
+    if (!connectionString) {
+      throw new Error(
+        'DATABASE_URL is not set. Check your .env file and restart the server.',
+      );
+    }
+
+    // pg adapter does not use Prisma's ?schema= query param; strip it for the connection
+    const url = new URL(connectionString);
+    url.searchParams.delete('schema');
+    const adapter = new PrismaPg({ connectionString: url.toString() });
 
     super({ adapter });
   }
