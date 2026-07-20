@@ -6,58 +6,7 @@ datasource db {
   provider = "postgresql"
 }
 
-enum RecordStatus {
-  VIGENTE
-  INACTIVO
-}
-
-enum TreatmentType {
-  EXTR_SUMA_PRIMA
-}
-
-enum AppliesWhen {
-  PRIMERA_PRIMA
-}
-
-enum SumRule {
-  MAYOR_QUE
-  MENOR_QUE
-  IGUAL
-}
-
-enum ProducerType {
-  PRODUCTOR
-  CODIGO_DIRECTO
-  TODOS
-}
-
-enum AssignmentScope {
-  PRODUCTOR
-  CODIGO_DIRECTO
-  TODOS
-}
-
-enum CertificationEnvironment {
-  QA
-  PRODUCTION
-}
-
-enum CertificationStatus {
-  PENDING
-  PASSED
-  FAILED
-}
-
-enum AuditAction {
-  CREATE
-  UPDATE
-  DELETE
-  STATUS_CHANGE
-  WIZARD_CREATE
-  ASSIGN_PRODUCER
-  CERTIFY
-  EMIT_PREVIEW
-}
+// ─── Auth ───────────────────────────────────────────────────────────────────
 
 enum UserRole {
   ADMIN
@@ -66,404 +15,380 @@ enum UserRole {
   AUDITOR
 }
 
-enum DocumentMaskType {
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  passwordHash String
+  fullName     String
+  role         UserRole @default(PRODUCT_MANAGER)
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@map("users")
+}
+
+// ─── Product core enums ─────────────────────────────────────────────────────
+
+enum ProductBranch {
+  AUTOMOVIL
+  SALUD
+  VIDA
+  PATRIMONIAL
+  INCLUSIVO
+  RCV_OBLIGATORIO
+}
+
+enum ContractCurrency {
+  VES
+  USD
+  INDEXADO
+}
+
+enum EmissionType {
+  EMISION_GARANTIZADA
+  REQUIERE_DECLARACION_SALUD
+  REQUIERE_INSPECCION
+}
+
+enum ProductStatus {
+  DRAFT
+  ACTUARIAL_REVIEW
+  SUBMITTED_TO_SUDEASEG
+  APPROVED_ACTIVE
+  REJECTED
+}
+
+enum RenewalFrequency {
+  ANUAL
+  SEMESTRAL
+  TRIMESTRAL
+  MENSUAL
+}
+
+enum RenewalType {
+  NORMAL
+  TACITA
+  CON_AVISO
+}
+
+enum DeductibleType {
+  MONTO_FIJO
+  PORCENTAJE_SINIESTRO
+  PORCENTAJE_SUMA_ASEGURADA
+}
+
+enum DocumentType {
+  CONDICIONES_GENERALES
+  CONDICIONES_PARTICULARES
+  NOTA_TECNICA_ACTUARIAL
   POLIZA
-  RECIBO
-  SINIESTRO
-  CESION_FACUL
-  CESION_COAS
+  CUADRO_RECIBO
 }
 
-model Currency {
-  id        Int      @id @default(autoincrement())
-  code      String   @unique
-  symbol    String
-  name      String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  products  Product[]
-  coverageMasters CoverageMaster[]
+enum FormFieldType {
+  TEXT
+  NUMBER
+  SELECT
+  DATE
+  BOOLEAN
 }
 
-model ReinsuranceContract {
-  id        Int      @id @default(autoincrement())
-  code      Int      @unique
-  name      String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  coverageMasters CoverageMaster[]
+enum FlowStepKey {
+  CLIENT_DATA
+  RISK_DATA
+  PLANS_COVERAGES
+  DOCUMENTS_OCR
+  DIGITAL_SIGNATURE
+  AI_INSPECTION
+  TECHNICAL_APPROVAL
+  PAYMENT
+  FINISHED
 }
 
-model ReinsuranceBranch {
-  id        Int      @id @default(autoincrement())
-  code      Int      @unique
-  name      String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  coverageMasters CoverageMaster[]
+enum RatingVariableType {
+  NUMBER
+  SELECT
+  TEXT
+  BOOLEAN
+  DATE
 }
 
-model MasterBranch {
-  id        Int          @id @default(autoincrement())
-  code      Int          @unique
-  name      String
-  alias1    String?
-  alias2    String?
-  status    RecordStatus @default(VIGENTE)
-  createdAt DateTime     @default(now())
-  updatedAt DateTime     @updatedAt
-  createdBy String
-  updatedBy String?
-
-  coverages        MasterCoverage[]
-  internalBranches InternalBranch[]
-  coverageMasters  CoverageMaster[]
-  products         Product[]
+enum CommercialChannelType {
+  TRADICIONAL
+  ALTERNATIVO
+  DIGITAL
 }
 
-model MasterCoverage {
-  id             Int          @id @default(autoincrement())
-  masterBranchId Int
-  code           Int
-  name           String
-  validFrom      DateTime
-  validTo        DateTime
-  status         RecordStatus @default(VIGENTE)
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
-  createdBy      String
-  updatedBy      String?
-
-  masterBranch      MasterBranch       @relation(fields: [masterBranchId], references: [id])
-  tariffs           MasterTariff[]
-  coverageMasters   CoverageMaster[]
-  internalCoverages InternalCoverage[]
-  productCoverages  ProductCoverage[]
-
-  @@unique([masterBranchId, code])
-}
-
-model MasterTariff {
-  id               Int          @id @default(autoincrement())
-  masterCoverageId Int
-  code             Int
-  name             String
-  validFrom        DateTime
-  validTo          DateTime
-  status           RecordStatus @default(VIGENTE)
-  createdAt        DateTime     @default(now())
-  updatedAt        DateTime     @updatedAt
-  createdBy        String
-  updatedBy        String?
-
-  masterCoverage  MasterCoverage   @relation(fields: [masterCoverageId], references: [id])
-  internalTariffs InternalTariff[]
-
-  @@unique([masterCoverageId, code])
-}
-
-model InternalBranch {
-  id             Int          @id @default(autoincrement())
-  code           Int
-  name           String
-  masterBranchId Int
-  group          String?
-  imageHandling  Boolean      @default(false)
-  status         RecordStatus @default(VIGENTE)
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
-  createdBy      String
-  updatedBy      String?
-
-  masterBranch    MasterBranch      @relation(fields: [masterBranchId], references: [id])
-  counters        DocumentCounter[]
-  masks           DocumentMask[]
-  coverages       InternalCoverage[]
-  coverageMasters CoverageMaster[]
-  products        Product[]
-
-  @@unique([masterBranchId, code])
-}
-
-model DocumentCounter {
-  id               Int    @id @default(autoincrement())
-  internalBranchId Int
-  concept          String
-  value            String
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
-  createdBy        String
-  updatedBy        String?
-
-  internalBranch InternalBranch @relation(fields: [internalBranchId], references: [id], onDelete: Cascade)
-
-  @@unique([internalBranchId, concept])
-}
-
-model DocumentMask {
-  id               Int              @id @default(autoincrement())
-  internalBranchId Int
-  type             DocumentMaskType
-  createdAt        DateTime         @default(now())
-  updatedAt        DateTime         @updatedAt
-  createdBy        String
-  updatedBy        String?
-
-  internalBranch InternalBranch      @relation(fields: [internalBranchId], references: [id], onDelete: Cascade)
-  segments       DocumentMaskSegment[]
-
-  @@unique([internalBranchId, type])
-}
-
-model DocumentMaskSegment {
-  id           Int     @id @default(autoincrement())
-  maskId       Int
-  position     Int
-  token        String
-  useSeparator Boolean @default(true)
-  separator    String  @default("-")
-
-  mask DocumentMask @relation(fields: [maskId], references: [id], onDelete: Cascade)
-
-  @@unique([maskId, position])
-}
-
-model InternalCoverage {
-  id                        Int           @id @default(autoincrement())
-  code                      Int
-  internalBranchId          Int
-  masterCoverageId          Int
-  name                      String
-  coverageGroup             String?
-  sumInsuredRequiredAtLevel Boolean       @default(false)
-  treatmentType             TreatmentType @default(EXTR_SUMA_PRIMA)
-  appliesWhen               AppliesWhen   @default(PRIMERA_PRIMA)
-  calculationForm           String        @default("SOBPECER")
-  sumForm                   String        @default("SOBPECER")
-  status                    RecordStatus  @default(VIGENTE)
-  createdAt                 DateTime      @default(now())
-  updatedAt                 DateTime      @updatedAt
-  createdBy                 String
-  updatedBy                 String?
-
-  internalBranch   InternalBranch    @relation(fields: [internalBranchId], references: [id])
-  masterCoverage   MasterCoverage    @relation(fields: [masterCoverageId], references: [id])
-  tariffs          InternalTariff[]
-  coverageMasters  CoverageMaster[]
-  productCoverages ProductCoverage[]
-
-  @@unique([internalBranchId, code])
-}
-
-model InternalTariff {
-  id                 Int           @id @default(autoincrement())
-  code               Int
-  internalCoverageId Int
-  masterTariffId     Int?
-  name               String
-  tariffGroup        String?
-  treatmentType      TreatmentType @default(EXTR_SUMA_PRIMA)
-  appliesWhen        AppliesWhen   @default(PRIMERA_PRIMA)
-  calculationForm    String        @default("SOBPECER")
-  sumForm            String        @default("SOBPECER")
-  status             RecordStatus  @default(VIGENTE)
-  createdAt          DateTime      @default(now())
-  updatedAt          DateTime      @updatedAt
-  createdBy          String
-  updatedBy          String?
-
-  internalCoverage InternalCoverage @relation(fields: [internalCoverageId], references: [id], onDelete: Cascade)
-  masterTariff     MasterTariff?    @relation(fields: [masterTariffId], references: [id])
-
-  @@unique([internalCoverageId, code])
-}
-
-model CoverageMaster {
-  id                      Int          @id @default(autoincrement())
-  masterBranchId          Int
-  masterCoverageId        Int
-  dependsOnCoverageId     Int?
-  compareToCoverageId     Int?
-  mandatory               Boolean      @default(false)
-  currencyId              Int
-  reinsuranceContractId   Int?
-  reinsuranceBranchId     Int?
-  pcndBranchCode          Int?
-  pcndCoverageCode        Int?
-  status                  RecordStatus @default(VIGENTE)
-  reinsuranceSumRule      SumRule      @default(MAYOR_QUE)
-  receiptSumRule          SumRule      @default(MAYOR_QUE)
-  calculationRoutine      Boolean      @default(true)
-  inputProc               Boolean      @default(false)
-  outputProc              Boolean      @default(false)
-  internalBranchId        Int
-  internalCoverageId      Int
-  createdAt               DateTime     @default(now())
-  updatedAt               DateTime     @updatedAt
-  createdBy               String
-  updatedBy               String?
-
-  masterBranch        MasterBranch         @relation(fields: [masterBranchId], references: [id])
-  masterCoverage      MasterCoverage       @relation(fields: [masterCoverageId], references: [id])
-  currency            Currency             @relation(fields: [currencyId], references: [id])
-  reinsuranceContract ReinsuranceContract? @relation(fields: [reinsuranceContractId], references: [id])
-  reinsuranceBranch   ReinsuranceBranch?   @relation(fields: [reinsuranceBranchId], references: [id])
-  internalBranch      InternalBranch       @relation(fields: [internalBranchId], references: [id])
-  internalCoverage    InternalCoverage     @relation(fields: [internalCoverageId], references: [id])
-  productCoverages    ProductCoverage[]
-
-  @@unique([masterBranchId, masterCoverageId])
-}
+// ─── Product ────────────────────────────────────────────────────────────────
 
 model Product {
-  id                   Int          @id @default(autoincrement())
-  masterBranchId       Int
-  internalBranchId     Int
-  planName             String
-  subPlanName          String?
-  allowsQuickEmission  Boolean      @default(false)
-  currencyId           Int
-  contractValidFrom    DateTime
-  contractValidTo      DateTime
-  annualCloseMonth     Int          @default(12)
-  premiumGuaranteeDays Int          @default(30)
-  renewalFrequency     String       @default("ANUAL")
-  renewalType          String       @default("NORMAL")
-  emissionType         String       @default("PRORRATA")
-  premiumDueFrequency  String       @default("ANUAL")
-  premiumDueType       String       @default("NORMAL")
-  status               RecordStatus @default(VIGENTE)
-  legacyCode           String?
-  createdAt            DateTime     @default(now())
-  updatedAt            DateTime     @updatedAt
-  createdBy            String
-  updatedBy            String?
+  id                         String           @id @default(uuid())
+  commercialName             String
+  internalCode               String           @unique
+  branch                     ProductBranch
+  currency                   ContractCurrency
+  emissionType               EmissionType
+  status                     ProductStatus    @default(DRAFT)
+  simplifiedContract         Boolean          @default(false)
+  uniformConditions          Boolean          @default(false)
+  lockedGeneralConditions    Boolean          @default(false)
+  numeroProvidenciaSudeaseg  String?
+  fechaGacetaAprobacion      DateTime?        @db.Date
+  isImmutable                Boolean          @default(false)
+  subPlanCode                String?
+  vigenciaInicio             DateTime?        @db.Date
+  vigenciaFin                DateTime?        @db.Date
+  allowsQuickEmission        Boolean          @default(false)
+  renewalFrequency           RenewalFrequency @default(ANUAL)
+  renewalType                RenewalType      @default(NORMAL)
+  premiumGuaranteeDays       Int              @default(30)
+  annualClosingMonth         Int              @default(12)
+  createdAt                  DateTime         @default(now())
+  updatedAt                  DateTime         @updatedAt
 
-  masterBranch        MasterBranch                @relation(fields: [masterBranchId], references: [id])
-  internalBranch      InternalBranch              @relation(fields: [internalBranchId], references: [id])
-  currency            Currency                    @relation(fields: [currencyId], references: [id])
-  coverages           ProductCoverage[]
-  producerAssignments ProducerProductAssignment[]
-  certificationRuns   CertificationRun[]
+  coverages          Coverage[]
+  actuarialData      ActuarialData?
+  exclusions         Exclusion[]
+  legalDocuments     LegalDocument[]
+  commercialChannels CommercialChannel[]
+  requiredDocuments  RequiredDocument[]
+  productPlans       ProductPlan[]
+  flowStepConfigs    FlowStepConfig[]
+  formFields         FormField[]
+  stateHistory       StateHistory[]
+  sisipConfig        SisipConfig?
+
+  @@map("products")
 }
 
-model ProductCoverage {
-  id                 Int      @id @default(autoincrement())
-  productId          Int
-  internalCoverageId Int
-  masterCoverageId   Int?
-  coverageMasterId   Int?
-  name               String
-  validFrom          DateTime
-  validTo            DateTime
-  createdAt          DateTime @default(now())
-  updatedAt          DateTime @updatedAt
-  createdBy          String
-  updatedBy          String?
+// ─── Coverages ──────────────────────────────────────────────────────────────
 
-  product          Product                 @relation(fields: [productId], references: [id], onDelete: Cascade)
-  internalCoverage InternalCoverage        @relation(fields: [internalCoverageId], references: [id])
-  masterCoverage   MasterCoverage?         @relation(fields: [masterCoverageId], references: [id])
-  coverageMaster   CoverageMaster?         @relation(fields: [coverageMasterId], references: [id])
-  tariffs          ProductCoverageTariff[]
-}
-
-model ProductCoverageTariff {
-  id                Int          @id @default(autoincrement())
-  productCoverageId Int
-  validFrom         DateTime
-  validTo           DateTime
-  minSumInsured     Decimal      @db.Decimal(18, 2)
-  maxSumInsured     Decimal      @db.Decimal(18, 2)
-  premium           Decimal      @db.Decimal(18, 2)
-  status            RecordStatus @default(VIGENTE)
-  createdAt         DateTime     @default(now())
-  updatedAt         DateTime     @updatedAt
-  createdBy         String
-  updatedBy         String?
-
-  productCoverage ProductCoverage @relation(fields: [productCoverageId], references: [id], onDelete: Cascade)
-}
-
-model Producer {
-  id          Int          @id @default(autoincrement())
-  code        String       @unique
-  name        String
-  type        ProducerType @default(PRODUCTOR)
-  legacyCode  String?
-  status      RecordStatus @default(VIGENTE)
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
-  createdBy   String
-  updatedBy   String?
-
-  assignments ProducerProductAssignment[]
-}
-
-model ProducerProductAssignment {
-  id         Int             @id @default(autoincrement())
-  productId  Int
-  producerId Int?
-  scope      AssignmentScope
-  validFrom  DateTime
-  validTo    DateTime?
-  status     RecordStatus    @default(VIGENTE)
-  createdAt  DateTime        @default(now())
-  updatedAt  DateTime        @updatedAt
-  createdBy  String
-  updatedBy  String?
-
-  product  Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
-  producer Producer? @relation(fields: [producerId], references: [id])
-}
-
-model CertificationRun {
-  id          Int                      @id @default(autoincrement())
-  productId   Int
-  environment CertificationEnvironment
-  status      CertificationStatus      @default(PENDING)
-  notes       String?
-  certifiedBy String?
-  certifiedAt DateTime?
-  createdAt   DateTime                 @default(now())
-  updatedAt   DateTime                 @updatedAt
-  createdBy   String
-  updatedBy   String?
+model Coverage {
+  id                      String          @id @default(uuid())
+  productId               String
+  name                    String
+  description             String?
+  sortOrder               Int             @default(0)
+  isBasicMandatory        Boolean         @default(false)
+  insuredSumMin           Decimal?        @db.Decimal(18, 2)
+  insuredSumMax           Decimal?        @db.Decimal(18, 2)
+  insuredSumFixed         Decimal?        @db.Decimal(18, 2)
+  deductibleType          DeductibleType?
+  deductibleValue         Decimal?        @db.Decimal(18, 2)
+  waitingPeriodDays       Int             @default(0)
+  tariffPremium           Decimal?        @db.Decimal(18, 2)
+  vigenciaDesde           DateTime?       @db.Date
+  vigenciaHasta           DateTime?       @db.Date
+  dependsOnCoverageName   String?
+  coberturaInternaCode    String?
+  tarifaInternaCode       String?
+  treatmentType           String?
+  calculationService      String?
+  reinsuranceContractCode String?
+  reinsuranceContractName String?
+  reinsuranceBranchCode   String?
+  createdAt               DateTime        @default(now())
+  updatedAt               DateTime        @updatedAt
 
   product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
 
-  @@unique([productId, environment])
-}
-
-model ConfigAuditLog {
-  id         String      @id @default(uuid())
-  userId     String
-  action     AuditAction
-  entityType String
-  entityId   String
-  productId  Int?
-  summary    String
-  before     Json?
-  after      Json?
-  metadata   Json?
-  createdAt  DateTime    @default(now())
-
-  @@index([userId])
-  @@index([entityType, entityId])
   @@index([productId])
-  @@index([createdAt])
-  @@map("config_audit_logs")
+  @@map("coverages")
 }
 
-model User {
-  id           String    @id @default(uuid())
-  email        String    @unique
-  passwordHash String
-  fullName     String
-  role         UserRole  @default(PRODUCT_MANAGER)
-  isActive     Boolean   @default(true)
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
+// ─── Actuarial ──────────────────────────────────────────────────────────────
 
-  @@map("users")
+model ActuarialData {
+  id                     String   @id @default(uuid())
+  productId              String   @unique
+  purePremium            Decimal  @db.Decimal(18, 4)
+  administrativeExpenses Decimal  @db.Decimal(8, 4)
+  commissions            Decimal  @db.Decimal(8, 4)
+  profitMargin           Decimal  @db.Decimal(8, 4)
+  commercialPremium      Decimal  @db.Decimal(18, 4)
+  actuaryName            String
+  actuaryCedula          String
+  actuarySudeasegNumber  String
+  technicalNoteUrl       String?
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+
+  product          Product           @relation(fields: [productId], references: [id], onDelete: Cascade)
+  ratingVariables  RatingVariable[]
+
+  @@map("actuarial_data")
+}
+
+model RatingVariable {
+  id              String             @id @default(uuid())
+  actuarialDataId String
+  name            String
+  label           String
+  variableType    RatingVariableType
+  required        Boolean            @default(true)
+  sortOrder       Int                @default(0)
+  options         Json?
+
+  actuarialData ActuarialData @relation(fields: [actuarialDataId], references: [id], onDelete: Cascade)
+
+  @@index([actuarialDataId])
+  @@map("rating_variables")
+}
+
+// ─── Legal ──────────────────────────────────────────────────────────────────
+
+model Exclusion {
+  id                  String  @id @default(uuid())
+  productId           String
+  text                String
+  sortOrder           Int     @default(0)
+  typographyHighlight Boolean @default(true)
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([productId])
+  @@map("exclusions")
+}
+
+model LegalDocument {
+  id                   String       @id @default(uuid())
+  productId            String
+  documentType         DocumentType
+  title                String
+  content              String       @db.Text
+  isLocked             Boolean      @default(false)
+  isSimplifiedTemplate Boolean      @default(false)
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([productId])
+  @@map("legal_documents")
+}
+
+model CommercialChannel {
+  id          String                @id @default(uuid())
+  productId   String
+  name        String
+  channelType CommercialChannelType @default(ALTERNATIVO)
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([productId])
+  @@map("commercial_channels")
+}
+
+model RequiredDocument {
+  id          String  @id @default(uuid())
+  productId   String
+  documentKey String
+  label       String
+  required    Boolean @default(true)
+  sortOrder   Int     @default(0)
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([productId])
+  @@map("required_documents")
+}
+
+// ─── Commercial plans ───────────────────────────────────────────────────────
+
+model ProductPlan {
+  id             String   @id @default(uuid())
+  productId      String
+  name           String
+  description    String?
+  badge          String?
+  priceFactor    Decimal  @db.Decimal(8, 4) @default(1)
+  isRecommended  Boolean  @default(false)
+  coverageIds    Json
+  coverageLabels Json
+  sortOrder      Int      @default(0)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([productId])
+  @@map("product_plans")
+}
+
+// ─── Emission flow ──────────────────────────────────────────────────────────
+
+model FlowStepConfig {
+  id          String      @id @default(uuid())
+  productId   String
+  stepKey     FlowStepKey
+  label       String
+  shortLabel  String?
+  description String?
+  enabled     Boolean     @default(true)
+  formEnabled Boolean     @default(true)
+  sortOrder   Int         @default(0)
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([productId, stepKey])
+  @@index([productId])
+  @@map("flow_step_configs")
+}
+
+model FormField {
+  id        String        @id @default(uuid())
+  productId String
+  label     String
+  fieldType FormFieldType
+  required  Boolean       @default(true)
+  options   Json?
+  sortOrder Int           @default(0)
+  stepKey   FlowStepKey   @default(RISK_DATA)
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([productId])
+  @@map("form_fields")
+}
+
+// ─── Workflow ───────────────────────────────────────────────────────────────
+
+model StateHistory {
+  id         String         @id @default(uuid())
+  productId  String
+  fromStatus ProductStatus?
+  toStatus   ProductStatus
+  comment    String?
+  changedAt  DateTime       @default(now())
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([productId])
+  @@map("state_history")
+}
+
+// ─── SISIP (optional) ───────────────────────────────────────────────────────
+
+model SisipConfig {
+  id                    String  @id @default(uuid())
+  productId             String  @unique
+  ramoInternoCode       String?
+  ramoInternoName       String?
+  branchAlias1          String?
+  branchAlias2          String?
+  producerCode          String?
+  producerName          String?
+  assignToAllProducers  Boolean @default(false)
+  counterCotizacion     String?
+  counterPoliza         String?
+  counterRecibo         String?
+  counterSiniestro      String?
+  maskPoliza            String?
+  maskRecibo            String?
+  maskSiniestro         String?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@map("sisip_configs")
 }
