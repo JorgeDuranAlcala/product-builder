@@ -16,7 +16,7 @@ import {
   MinLength,
   ValidateNested,
 } from 'class-validator';
-import { Type } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
 import {
   ContractCurrency,
   DeductibleType,
@@ -261,6 +261,7 @@ export class PlanInputDto {
   @IsString()
   name!: string;
 
+  /** Activo: texto normal/null. Inactivo: prefijo `__INACTIVE__` + texto opcional. */
   @IsOptional()
   @IsString()
   description?: string | null;
@@ -269,6 +270,7 @@ export class PlanInputDto {
   @IsString()
   badge?: string;
 
+  /** Suma de primas del plan (no multiplicador actuarial). Persistido tal cual. */
   @IsNumber()
   priceFactor!: number;
 
@@ -338,6 +340,7 @@ export class ReplaceActuarialDto {
 
   @IsString()
   @MinLength(5)
+  @MaxLength(20)
   actuaryCedula!: string;
 
   @IsString()
@@ -348,10 +351,12 @@ export class ReplaceActuarialDto {
   @IsUrl()
   technicalNoteUrl?: string;
 
+  @Transform(({ value }) => (Array.isArray(value) ? value : []))
+  @IsOptional()
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => RatingVariableInputDto)
-  ratingVariables!: RatingVariableInputDto[];
+  ratingVariables: RatingVariableInputDto[] = [];
 }
 
 export class ExclusionInputDto {
@@ -396,6 +401,9 @@ export class CommercialChannelInputDto {
 
 export class RequiredDocumentInputDto {
   @IsString()
+  @MinLength(2)
+  @MaxLength(60)
+  @Matches(/^[A-Z0-9_-]+$/)
   documentKey!: string;
 
   @IsString()

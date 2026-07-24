@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, HttpStatus, Post } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Public } from '../common/decorators/public.decorator';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
@@ -12,6 +12,7 @@ export class AuthController {
 
   @Public()
   @Post('signup')
+  @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Registrar usuario (el primero es ADMIN)' })
   signup(@Body() dto: SignupDto) {
     return this.authService.signup(dto);
@@ -19,6 +20,7 @@ export class AuthController {
 
   @Public()
   @Post('login')
+  @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Iniciar sesión' })
   login(@Body() dto: LoginDto) {
     return this.authService.login(dto);

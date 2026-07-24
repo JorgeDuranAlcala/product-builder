@@ -19,6 +19,9 @@ export function serializeCoverage<T extends Record<string, unknown>>(coverage: T
 }
 
 export function serializeActuarial<T extends Record<string, unknown>>(data: T) {
+  const ratingVariables = Array.isArray(data.ratingVariables)
+    ? data.ratingVariables
+    : [];
   return {
     ...data,
     purePremium: decimalToNumber(data.purePremium as Prisma.Decimal),
@@ -28,6 +31,7 @@ export function serializeActuarial<T extends Record<string, unknown>>(data: T) {
     commissions: decimalToNumber(data.commissions as Prisma.Decimal),
     profitMargin: decimalToNumber(data.profitMargin as Prisma.Decimal),
     commercialPremium: decimalToNumber(data.commercialPremium as Prisma.Decimal),
+    ratingVariables,
   };
 }
 
