@@ -155,6 +155,7 @@ export class ProductsController {
   }
 
   @Post(':id/workflow/transition')
+  @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Transición de estado del producto' })
   transition(
     @Param('id') id: string,
@@ -164,6 +165,7 @@ export class ProductsController {
   }
 
   @Post(':id/workflow/approve')
+  @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Aprobar producto SUDEASEG' })
   approve(@Param('id') id: string, @Body() dto: WorkflowApproveDto) {
     return this.productsService.approve(id, dto);

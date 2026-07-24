@@ -255,7 +255,9 @@ export class ProductsService {
         description: dto.description?.trim() || null,
         sortOrder: dto.sortOrder ?? 0,
         isBasicMandatory: dto.isBasicMandatory ?? false,
-        insuredSumFixed: dto.insuredSumFixed ?? null,
+        insuredSumFixed: dto.insuredSumFixed ?? dto.insuredSumMin ?? null,
+        insuredSumMin: dto.insuredSumMin ?? null,
+        insuredSumMax: dto.insuredSumMax ?? null,
         deductibleType: dto.deductibleType ?? null,
         deductibleValue: dto.deductibleValue ?? null,
         waitingPeriodDays: dto.waitingPeriodDays ?? 0,
@@ -334,8 +336,10 @@ export class ProductsService {
           data: {
             productId,
             name: plan.name,
+            // Pass-through: "__INACTIVE__..." marks inactive plans (A.5.3)
             description: plan.description ?? null,
             badge: plan.badge ?? null,
+            // priceFactor = sum of plan premiums from frontend (not actuarial multiplier)
             priceFactor: plan.priceFactor,
             isRecommended: plan.isRecommended,
             coverageIds: plan.coverageIds,
@@ -371,6 +375,8 @@ export class ProductsService {
       dto.profitMargin,
     );
 
+    const ratingVariables = dto.ratingVariables ?? [];
+
     const actuarial = await this.prisma.$transaction(async (tx) => {
       await tx.actuarialData.deleteMany({ where: { productId } });
       return tx.actuarialData.create({
@@ -386,7 +392,7 @@ export class ProductsService {
           actuarySudeasegNumber: dto.actuarySudeasegNumber.trim(),
           technicalNoteUrl: dto.technicalNoteUrl ?? null,
           ratingVariables: {
-            create: dto.ratingVariables.map((v) => ({
+            create: ratingVariables.map((v) => ({
               name: v.name,
               label: v.label,
               variableType: v.variableType,
@@ -402,7 +408,7 @@ export class ProductsService {
 
     return serializeActuarial({
       ...actuarial,
-      ratingVariables: actuarial.ratingVariables.map((v) => ({
+      ratingVariables: (actuarial.ratingVariables ?? []).map((v) => ({
         ...v,
         options: v.options ?? null,
       })),
@@ -768,10 +774,12 @@ export class ProductsService {
       actuarialData: p.actuarialData
         ? serializeActuarial({
             ...p.actuarialData,
-            ratingVariables: p.actuarialData.ratingVariables.map((v) => ({
-              ...v,
-              options: v.options ?? null,
-            })),
+            ratingVariables: (p.actuarialData.ratingVariables ?? []).map(
+              (v) => ({
+                ...v,
+                options: v.options ?? null,
+              }),
+            ),
           })
         : null,
       productPlans: p.productPlans.map(serializePlan),
